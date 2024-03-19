@@ -37,7 +37,6 @@ allwindows: cleanwin targetwin
 cleanwin:
 	@cmd /C delwin.bat
 	
-
 targetwin:
 	@mkdir -p tmp\bin
 	@goreleaser build --single-target --snapshot --id benthos \
