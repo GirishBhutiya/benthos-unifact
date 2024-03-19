@@ -1,0 +1,31 @@
+input:
+  csv:
+    timeout: 15 
+    ftphost: "217.21.84.185"
+    ftpusername: "u974007693"
+    ftppassword: "Password99!@3"
+    ftpport: 21
+    path: ./csv
+    sourcetype: "networkpath"
+    networkpath: "./csv"
+    file: "/HMITT.csv"
+    node: '{"1": [{"name":"Pressure", "group": "D001", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'
+
+pipeline:
+  processors:
+    - bloblang: |
+        root =  this
+        root.timestamp_ms = (timestamp_unix_nano() / 1000000).floor()
+        root.group = meta("group")
+        root.db = meta("db")
+        root.historian = meta("historian")
+        root.sqlSp = meta("sqlSp")
+    
+
+output:
+  mqtt:
+    urls:
+      - 'localhost:1883'
+    topic: 'ia/raw/csv/'
+    client_id: benthos-umh
+      

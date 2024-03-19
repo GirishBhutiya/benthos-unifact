@@ -1,0 +1,35 @@
+input:
+  modbus:
+    endpoint: "localhost:10502"
+    slaveid: 1
+    timeout: 10
+    subscriptions: 
+      - '{"1": [{"address": "1", "addresstype":"inputregister","name":"Pressure", "group": "D001", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'
+      - '{"2": [{"address": "1", "addresstype":"coils","name":"Temprature", "group": "D001", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'
+      - '{"3": [{"address": "1", "addresstype":"discrete","name":"Discrete", "group": "D001", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'
+      - '{"3": [{"address": "1", "addresstype":"holding","name":"Holding", "group": "D001", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'
+    subscribeEnabled: true
+    # unitID: 1  # Specify the Modbus unit ID
+    # functionCode: 3  # Specify the Modbus function code
+    # startingAddress: 0  # Specify the starting address for Modbus requests
+    # quantity: 10  # Specify the quantity of values to read
+    # interval: "1s"  # Specify the interval for polling the Modbus server
+    # encoding: "binary"  # Specify the encoding for reading values (binary or ascii)
+pipeline:
+  processors:
+    - bloblang: |
+        root.value = meta("value").number()
+        root.timestamp_ms = (timestamp_unix_nano() / 1000000).floor()
+        root.group = meta("group")
+        root.db = meta("db")
+        root.historian = meta("historian")
+        root.sqlSp = meta("sqlSp")
+        root.name = meta("name")
+    
+
+output:
+  mqtt:
+    urls:
+      - 'localhost:1883'
+    topic: 'ia/raw/modbus/${! meta("name") }'
+    client_id: benthos-umh

@@ -1,0 +1,47 @@
+input:
+  absubscription:
+    tcpDevice: 'localhost' # IP address of the PLC
+    timeout: 10             # Timeout in seconds for connections and requests. Default to 10
+    subscriptions:
+       - '{"1": [{"address": "Q27_CurveDetect", "datatype":"bool","group": "D010", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'
+       - '{"2": [{"address": "I125_InjcetionFwdInPlace", "datatype":"bool","group": "D010", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'
+       - '{"3": [{"address": "Q15_BAD_SHOT_OR_WUS_TO_EXT", "datatype":"bool","group": "D010", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'
+ #      - '{"4": [{"address": "I44_PART_KEPT_TO_EXT", "datatype":"bool","group": "D010", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'
+pipeline:
+  processors:
+    - bloblang: |
+        root.value = meta("value")
+        root.tag_name = meta("tag_name")
+        root.group = meta("group")
+        root.db = meta("db")
+        root.historian = meta("historian")
+        root.sqlSp = meta("sqlSp")
+        root.datatype = meta("datatype")
+        root.timestamp_ms = (timestamp_unix_nano() / 1000000).floor()
+ 
+ 
+output:
+  broker:
+    pattern: fan_out
+    outputs:
+      - mqtt:
+          urls:
+            - 'tcp://localhost:1883'
+          topic: 'ia/raw/absubscription/${! meta("group") }'
+      - influxdb:
+          endpoint: "http://localhost:8086"
+          username: "admin"
+          password: "Password@123"
+          token: "blHai9uvqVKAkKDQL3-h2R9xcoRNTHFqOwHJrDW2SscYUOCH8Y-8UdJoCzqAxW3w4X1gcAr-R3SGfrIM4v931Q=="
+          org: "RCM"
+          bucket: "test"
+          precision: "ns"
+ 
+ 
+ 
+# output:
+#   mqtt:
+#     urls:
+#       - 'mqtt:1883'
+#     topic: 'ia/raw/abtrigger/${! meta("group") }'
+#     client_id: benthos-umh

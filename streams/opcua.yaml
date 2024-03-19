@@ -1,0 +1,30 @@
+input:
+  opcua:
+    endpoint: "opc.tcp://172.29.0.4:46010"
+    nodeIDs:
+      - '{"1": [{"node": "ns=2;s=Pressure", "name":"Pressure", "group": "D001", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'
+      - '{"2": [{"node": "ns=2;s=Temperature", "name":"Temperature", "group": "D002", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'
+    subscribeEnabled: true
+    insecure: true
+pipeline:
+  processors:
+    - bloblang: |
+        root = meta("Message").parse_json()
+        root.timestamp_ms = (timestamp_unix_nano() / 1000000).floor()
+        root.group = meta("group")
+        root.db = meta("db")
+        root.historian = meta("historian")
+        root.sqlSp = meta("sqlSp")
+output:
+  broker:
+    pattern: fan_out
+    outputs:
+      - redis_list:
+          url: tcp://redis:6379
+          key: 'trigger' 
+      - mqtt:
+          urls:
+            - 'tcp://mqtt:1883'
+          topic: 'ia/raw/opcua/${! meta("opcua_path") }'
+
+#exec [MES_DCM_OPC_Prod_Process_limits] @TagTimestamp = {(tagTimeStamp1)},@ShotCounter_PLC = {(ShotCounter_PLC)},@StartUp_Scrap_CycleCounter = {(StartUp_Scrap_CycleCounter)}

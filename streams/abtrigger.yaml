@@ -1,0 +1,39 @@
+input:
+  abtrigger:
+    tcpDevice: 'localhost' # IP address of the PLC
+    timeout: 10             # Timeout in seconds for connections and requests. Default to 10
+    subscriptions:
+       - '{"1": [{"address": "tag1", "datatype":"int16","group": "D001", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'
+       - '{"2": [{"address": "tag2", "datatype":"string","group": "D002", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'
+    tsubscriptions:
+      - '{"1": [{"address":"tag11","datatype":"int16", "name": "PressureNodeName"}, {"address": "tag12", "datatype":"int16","name": "HumidityNodeName"}]}'
+      - '{"2": [{"address":"tag13","datatype":"string","name": "TemperatureNodeName"}, {"address": "tag14", "datatype":"int16","name": "Air Qualit Node Name"}]}'
+pipeline:
+  processors:
+    - bloblang: |
+        root = meta("Message").parse_json()
+        root.value = meta("value")
+        root.timestamp_ms = (timestamp_unix_nano() / 1000000).floor()
+        root.trigger = meta("trigger")
+        root.group = meta("group")
+        root.db = meta("db")
+        root.historian = meta("historian")
+        root.sqlSp = meta("sqlSp")
+        root.value = if meta("datatype") != "string" {
+          root.value.number()
+        } else {
+          root.value.string()
+        }
+
+output:
+  broker:
+    pattern: fan_out
+    outputs:
+      - redis_list:
+          url: tcp://redis:6379
+          key: 'trigger' 
+      - mqtt:
+          urls:
+            - 'tcp://mqtt:1883'
+          topic: 'ia/raw/abtrigger/${! meta("group") }'
+      

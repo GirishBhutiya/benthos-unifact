@@ -1,0 +1,74 @@
+version: '3'
+ 
+services:
+  benthos-umh:
+    build: ./
+    image: benthos
+    # volumes:
+    #   - D:\Tech\upwork\P1\unifact_Benthos2\config\redis_mqtt.yaml:/benthos.yaml
+    ports:
+      - 4195:4195
+    networks:
+      - benthos
+ 
+  redis:
+    container_name: redis
+    image: redis
+    # command: redis-server --requirepass superpassword
+    restart: unless-stopped
+    tty: true
+    ports:
+      - 6379:6379
+    networks:
+      - benthos
+ 
+  node-red:
+    container_name: nodered
+    image: nodered/node-red
+    ports:
+      - "1880:1880"
+      - "10502:10502"
+    links:
+      - redis
+    networks:
+     - benthos
+ 
+  MQTT:
+    container_name: mqtt
+    image: eclipse-mosquitto
+    command: mosquitto -c /mosquitto-no-auth.conf
+    tty: true
+    restart: unless-stopped
+    ports:
+      - 1883:1883
+    networks:
+      - benthos
+
+  opcua:
+     container_name: opcsimulator1
+     image: opcsimulator
+     ports:
+       - 46010:46010
+     networks:
+       - benthos
+ 
+  influxdb:
+    container_name: influxdb
+    image: influxdb
+    ports:
+      - 8086:8086
+    networks:
+      - benthos
+ 
+ 
+networks:
+  benthos:
+      driver: bridge
+      ipam:
+          driver: default
+          config:
+              - subnet: "172.29.0.0/16"
+
+ 
+ 
+ 

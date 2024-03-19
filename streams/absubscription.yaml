@@ -1,0 +1,32 @@
+input:
+  absubscription:
+    tcpDevice: 'localhost' # IP address of the PLC
+    timeout: 10             # Timeout in seconds for connections and requests. Default to 10
+    subscriptions:
+       - '{"1": [{"address": "tag1", "name":"Pressure", "datatype":"int16","group": "D001", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'
+       - '{"2": [{"address": "tag2", "name":"Temperature", "datatype":"str","group": "D002", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'
+pipeline:
+  processors:
+    - bloblang: |
+        root = meta("Message").parse_json()
+        #root.value = meta("value")
+        #root.trigger = meta("tag_name")
+        root.group = meta("group")
+        root.db = meta("db")
+        root.historian = meta("historian")
+        root.sqlSp = meta("sqlSp")
+        root.timestamp_ms = (timestamp_unix_nano() / 1000000).floor()
+        
+
+output:
+  broker:
+    pattern: fan_out
+    outputs:
+      - redis_list:
+          url: tcp://redis:6379
+          key: 'trigger' 
+      - mqtt:
+          urls:
+            - 'localhost:1883'
+          topic: 'ia/raw/absubscription/${! meta("tag_name") }'
+          client_id: benthos-umh
