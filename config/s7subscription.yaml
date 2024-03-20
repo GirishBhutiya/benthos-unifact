@@ -1,0 +1,34 @@
+input:
+  s7comm:
+    tcpDevice: '192.168.0.1' # IP address of the S7 PLC
+    rack: 0                  # Rack number of the PLC. Defaults to 0
+    slot: 1                  # Slot number of the PLC. Defaults to 1
+    batchMaxSize: 480         # Maximum number of addresses per batch request. Defaults to 480
+    timeout: 10             # Timeout in seconds for connections and requests. Default to 10
+    subscriptions:               # List of addresses to read from
+      - '{"1": [{"address": ""DB1.DW20"", "name":"Pressure", "datatype":"int16","group": "D001", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'  # Accesses a double word at location 20 in data block 1
+      - '{"2": [{"address": ""DB1.S30.10"", "name":"Temperature", "datatype":"str","group": "D002", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}' # Accesses a 10-byte string at location 30 in data block 1    
+pipeline:
+  processors:
+    - bloblang: |
+        root = meta("Message").parse_json()
+        root.value = meta("value")
+        root.timestamp_ms = (timestamp_unix_nano() / 1000000).floor()
+        root.trigger = meta("trigger")
+        root.group = meta("group")
+        root.db = meta("db")
+        root.historian = meta("historian")
+        root.sqlSp = meta("sqlSp")
+        root.value = if meta("datatype") != "string" {
+          root.value.number()
+        } else {
+          root.value.string()
+        }
+        
+
+output:
+  mqtt:
+    urls:
+      - 'localhost:1883'
+    topic: 'ia/raw/s7subscription/${! meta("trigger") }'
+    client_id: benthos-umh

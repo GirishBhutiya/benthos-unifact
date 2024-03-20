@@ -8,6 +8,12 @@ input:
     tsubscriptions:
       - '{"1": [{"address":"tag11","datatype":"int16", "name": "PressureNodeName"}, {"address": "tag12", "datatype":"int16","name": "HumidityNodeName"}]}'
       - '{"2": [{"address":"tag13","datatype":"string","name": "TemperatureNodeName"}, {"address": "tag14", "datatype":"int16","name": "Air Qualit Node Name"}]}'
+  mqtt:
+    tcpDevice: 'localhost' # IP address of the PLC
+    timeout: 10             # Timeout in seconds for connections and requests. Default to 10
+    tsubscriptions:
+      - '{"1": [{"topicname":"tag11","name": "PressureNodeName"}, {"address": "tag12", "datatype":"int16","name": "HumidityNodeName"}]}'
+      - '{"2": [{"address":"tag13","datatype":"string","name": "TemperatureNodeName"}, {"address": "tag14", "datatype":"int16","name": "Air Qualit Node Name"}]}'
 pipeline:
   processors:
     - bloblang: |

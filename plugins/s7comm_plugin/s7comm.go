@@ -18,48 +18,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"regexp"
-	"strconv"
 	"time"
 
 	"github.com/benthosdev/benthos/v4/public/service"
 	"github.com/robinson/gos7" // gos7 is a Go client library for interacting with Siemens S7 PLCs.
 )
-
-const addressRegexp = `^(?P<area>[A-Z]+)(?P<no>[0-9]+)\.(?P<type>[A-Z]+)(?P<start>[0-9]+)(?:\.(?P<extra>.*))?$`
-
-var (
-	regexAddr = regexp.MustCompile(addressRegexp)
-	// Area mapping taken from https://github.com/robinson/gos7/blob/master/client.go
-	areaMap = map[string]int{
-		"PE": 0x81, // process inputs
-		"PA": 0x82, // process outputs
-		"MK": 0x83, // Merkers
-		"DB": 0x84, // DB
-		"C":  0x1C, // counters
-		"T":  0x1D, // timers
-	}
-	// Word-length mapping taken from https://github.com/robinson/gos7/blob/master/client.go
-	wordLenMap = map[string]int{
-		"X":  0x01, // Bit
-		"B":  0x02, // Byte (8 bit)
-		"C":  0x03, // Char (8 bit)
-		"S":  0x03, // String (8 bit)
-		"W":  0x04, // Word (16 bit)
-		"I":  0x05, // Integer (16 bit)
-		"DW": 0x06, // Double Word (32 bit)
-		"DI": 0x07, // Double integer (32 bit)
-		"R":  0x08, // IEEE 754 real (32 bit)
-		// see https://support.industry.siemens.com/cs/document/36479/date_and_time-format-for-s7-?dti=0&lc=en-DE
-		"DT": 0x0F, // Date and time (7 byte)
-	}
-)
-
-type S7DataItemWithAddressAndConverter struct {
-	Address       string
-	ConverterFunc converterFunc
-	Item          gos7.S7DataItem
-}
 
 //------------------------------------------------------------------------------
 
@@ -76,6 +39,7 @@ type S7CommInput struct {
 	handler      *gos7.TCPClientHandler                // TCP handler to manage the connection.
 	log          *service.Logger                       // Logger for logging plugin activity.
 	batches      [][]S7DataItemWithAddressAndConverter // List of items to read from the PLC, grouped into batches with a maximum size.
+	subscription []subscriptionD
 }
 
 type converterFunc func([]byte) interface{}
@@ -91,7 +55,7 @@ var S7CommConfigSpec = service.NewConfigSpec().
 	Field(service.NewIntField("slot").Description("Slot number of the PLC. Identifies the CPU slot within the rack.").Default(1)).
 	Field(service.NewIntField("batchMaxSize").Description("Maximum count of addresses to be bundled in one batch-request (PDU size).").Default(480)).
 	Field(service.NewIntField("timeout").Description("The timeout duration in seconds for connection attempts and read requests.").Default(10)).
-	Field(service.NewStringListField("addresses").Description("List of S7 addresses to read in the format '<area>.<type><address>[.extra]', e.g., 'DB5.X3.2', 'DB5.B3', or 'DB5.C3'. " +
+	Field(service.NewStringListField("subscriptions").Description("List of S7 addresses to read in the format '<area>.<type><address>[.extra]', e.g., 'DB5.X3.2', 'DB5.B3', or 'DB5.C3'. " +
 		"Address formats include direct area access (e.g., DB1 for data block one) and data types (e.g., X for bit, B for byte)."))
 
 // newS7CommInput is the constructor function for S7CommInput. It parses the plugin configuration,
@@ -112,7 +76,7 @@ func newS7CommInput(conf *service.ParsedConfig, mgr *service.Resources) (service
 		return nil, err
 	}
 
-	addresses, err := conf.FieldStringList("addresses")
+	subscriptions, err := conf.FieldStringList("subscriptions")
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +92,7 @@ func newS7CommInput(conf *service.ParsedConfig, mgr *service.Resources) (service
 	}
 
 	// Now split the addresses into batches based on the batchMaxSize
-	batches, err := parseAddresses(addresses, batchMaxSize)
+	parsedSubscriptions, batches, err := ParseSubscriptionDef(subscriptions, batchMaxSize)
 	if err != nil {
 		return nil, err
 	}
@@ -139,55 +103,12 @@ func newS7CommInput(conf *service.ParsedConfig, mgr *service.Resources) (service
 		slot:         slot,
 		log:          mgr.Logger(),
 		batches:      batches,
+		subscription: parsedSubscriptions,
 		batchMaxSize: batchMaxSize,
 		timeout:      time.Duration(timeoutInt) * time.Second,
 	}
 
 	return service.AutoRetryNacksBatched(m), nil
-}
-
-func parseAddresses(addresses []string, batchMaxSize int) ([][]S7DataItemWithAddressAndConverter, error) {
-	parsedAddresses := make([]S7DataItemWithAddressAndConverter, 0, len(addresses))
-
-	for _, address := range addresses {
-		item, converterFunc, err := handleFieldAddress(address)
-		if err != nil {
-			return nil, fmt.Errorf("address %q: %w", address, err)
-		}
-
-		newS7DataItemWithAddressAndConverter := S7DataItemWithAddressAndConverter{
-			Address:       address,
-			ConverterFunc: converterFunc,
-			Item:          *item,
-		}
-
-		parsedAddresses = append(parsedAddresses, newS7DataItemWithAddressAndConverter)
-	}
-
-	// check for duplicates
-
-	for i, a := range parsedAddresses {
-		for j, b := range parsedAddresses {
-			if i == j {
-				continue
-			}
-			if a.Item.Area == b.Item.Area && a.Item.DBNumber == b.Item.DBNumber && a.Item.Start == b.Item.Start {
-				return nil, fmt.Errorf("duplicate address %v", a)
-			}
-		}
-	}
-
-	// Now split the addresses into batches based on the batchMaxSize
-	batches := make([][]S7DataItemWithAddressAndConverter, 0)
-	for i := 0; i < len(parsedAddresses); i += batchMaxSize {
-		end := i + batchMaxSize
-		if end > len(parsedAddresses) {
-			end = len(parsedAddresses)
-		}
-		batches = append(batches, parsedAddresses[i:end])
-	}
-
-	return batches, nil
 }
 
 //------------------------------------------------------------------------------
@@ -272,8 +193,8 @@ func (g *S7CommInput) ReadBatch(ctx context.Context) (service.MessageBatch, serv
 			// Create a new message with the current state of the buffer
 			// Note: Depending on your requirements, you may want to reset the buffer
 			// after creating each message or keep accumulating data in it.
-			msg := service.NewMessage(buffer)
-
+			//msg := service.NewMessage(buffer)
+			msg := g.createMessageFromValue(g.subscription[i], buffer)
 			// Append the new message to the msgs slice
 			msgs = append(msgs, msg)
 		}
@@ -284,6 +205,22 @@ func (g *S7CommInput) ReadBatch(ctx context.Context) (service.MessageBatch, serv
 	}, nil
 }
 
+// createMessageFromValue creates a benthos messages from a given variant and nodeID
+// theoretically nodeID can be extracted from variant, but not in all cases (e.g., when subscribing), so it it left to the calling function
+func (g *S7CommInput) createMessageFromValue(subscription subscriptionD, value []byte) *service.Message {
+
+	//log.Println("value is:", cleanSubString(tagValue), "L")
+	message := service.NewMessage(value)
+	message.MetaSet("tag_name", subscription.Address)
+	message.MetaSet("group", subscription.Group)
+	message.MetaSet("db", subscription.DB)
+	message.MetaSet("historian", subscription.Historian)
+	message.MetaSet("sqlSp", subscription.SqlSp)
+	message.MetaSet("datatype", subscription.DataType)
+
+	return message
+
+}
 func (g *S7CommInput) Close(ctx context.Context) error {
 	if g.handler != nil {
 		g.handler.Close()
@@ -292,128 +229,4 @@ func (g *S7CommInput) Close(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-func handleFieldAddress(address string) (*gos7.S7DataItem, converterFunc, error) {
-	// Parse the address into the different parts
-	if !regexAddr.MatchString(address) {
-		return nil, nil, fmt.Errorf("invalid address %q", address)
-	}
-	names := regexAddr.SubexpNames()[1:]
-	parts := regexAddr.FindStringSubmatch(address)[1:]
-	if len(names) != len(parts) {
-		return nil, nil, fmt.Errorf("names %v do not match parts %v", names, parts)
-	}
-	groups := make(map[string]string, len(names))
-	for i, n := range names {
-		groups[n] = parts[i]
-	}
-
-	// Check that we do have the required entries in the address
-	if _, found := groups["area"]; !found {
-		return nil, nil, errors.New("area is missing from address")
-	}
-
-	if _, found := groups["no"]; !found {
-		return nil, nil, errors.New("area index is missing from address")
-	}
-	if _, found := groups["type"]; !found {
-		return nil, nil, errors.New("type is missing from address")
-	}
-	if _, found := groups["start"]; !found {
-		return nil, nil, errors.New("start address is missing from address")
-	}
-	dtype := groups["type"]
-
-	// Lookup the item values from names and check the params
-	area, found := areaMap[groups["area"]]
-	if !found {
-		return nil, nil, errors.New("invalid area")
-	}
-	wordlen, found := wordLenMap[dtype]
-	if !found {
-		return nil, nil, errors.New("unknown data type")
-	}
-	areaidx, err := strconv.Atoi(groups["no"])
-	if err != nil {
-		return nil, nil, fmt.Errorf("invalid area index: %w", err)
-	}
-	start, err := strconv.Atoi(groups["start"])
-	if err != nil {
-		return nil, nil, fmt.Errorf("invalid start address: %w", err)
-	}
-
-	// Check the amount parameter if any
-	var extra, bit int
-	switch dtype {
-	case "S":
-		// We require an extra parameter
-		x := groups["extra"]
-		if x == "" {
-			return nil, nil, errors.New("extra parameter required")
-		}
-
-		extra, err = strconv.Atoi(x)
-		if err != nil {
-			return nil, nil, fmt.Errorf("invalid extra parameter: %w", err)
-		}
-		if extra < 1 {
-			return nil, nil, fmt.Errorf("invalid extra parameter %d", extra)
-		}
-	case "X":
-		// We require an extra parameter
-		x := groups["extra"]
-		if x == "" {
-			return nil, nil, errors.New("extra parameter required")
-		}
-
-		bit, err = strconv.Atoi(x)
-		if err != nil {
-			return nil, nil, fmt.Errorf("invalid extra parameter: %w", err)
-		}
-		if bit < 0 || bit > 7 {
-			// Ensure bit address is valid
-			return nil, nil, fmt.Errorf("invalid extra parameter: bit address %d out of range", bit)
-		}
-	default:
-		if groups["extra"] != "" {
-			return nil, nil, errors.New("extra parameter specified but not used")
-		}
-	}
-
-	// Get the required buffer size
-	amount := 1
-	var buflen int
-	switch dtype {
-	case "X", "B", "C": // 8-bit types
-		buflen = 1
-	case "W", "I": // 16-bit types
-		buflen = 2
-	case "DW", "DI", "R": // 32-bit types
-		buflen = 4
-	case "DT": // 7-byte
-		buflen = 7
-	case "S":
-		amount = extra
-		// Extra bytes as the first byte is the max-length of the string and
-		// the second byte is the actual length of the string.
-		buflen = extra + 2
-	default:
-		return nil, nil, errors.New("invalid data type")
-	}
-
-	// Setup the data item
-	item := &gos7.S7DataItem{
-		Area:     area,
-		WordLen:  wordlen,
-		Bit:      bit,
-		DBNumber: areaidx,
-		Start:    start,
-		Amount:   amount,
-		Data:     make([]byte, buflen),
-	}
-
-	// Determine the type converter function
-	f := determineConversion(dtype)
-	return item, f, nil
 }
