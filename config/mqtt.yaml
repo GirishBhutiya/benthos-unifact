@@ -14,26 +14,26 @@
 
 ---
 input:
-  opcua:
-    endpoint: "opc.tcp://localhost:46010"
-    nodeIDs:
-      - '{"1": [{"node": "ns=2;s=Pressure", "name":"Pressure", "mtopic":"runtime","group": "D001", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'
-      - '{"2": [{"node": "ns=2;s=Temperature", "name":"Temperature", "mtopic":"runtime", "group": "D002", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'
-    subscribeEnabled: true
-    insecure: true
-
+  mqtttrigger:
+    url: localhost:1883
+    client_id: benthos-mqtt
+    subscriptions:
+      - '{"1": [{"topic":"ia/raw/opcua/#", "outputtopic":"caltemprature"}]}'
+    tsubscriptions:
+      - '{"1": [{"topic":"caljson", "elements": "Cal_Runtime,Cal_Qty,Cal_scrap,Cal_OEE,Cal_Availability,averageJogVelocity"},{"topic":"caljson1", "elements": "job_product,job_shoporder,job_machineRate"}]}'
+    qos: 1
+    keepalive: 60
+    timeout: 10s 
+    
 pipeline:
   processors:
     - bloblang: |
-        root = meta("Message").parse_json()
+        root = this.string().parse_json()
+        root.topic =  meta("mqtt_topic")
         root.timestamp_ms = (timestamp_unix_nano() / 1000000).floor()
-        root.group = meta("group")
-        root.db = meta("db")
-        root.historian = meta("historian")
-        root.sqlSp = meta("sqlSp")
 output:
   mqtt:
     urls:
       - 'localhost:1883'
-    topic: 'ia/raw/opcua/${! meta("opcua_path") }'
+    topic: '${! meta("outputtopic") }'
     client_id: benthos-umh

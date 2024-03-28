@@ -20,6 +20,7 @@ import (
 	_ "github.com/benthosdev/benthos/v4/public/components/all"
 	"github.com/benthosdev/benthos/v4/public/service"
 	_ "github.com/united-manufacturing-hub/benthos-umh/v2/plugins/ab_plugin"
+	_ "github.com/united-manufacturing-hub/benthos-umh/v2/plugins/cal_mqtt"
 	_ "github.com/united-manufacturing-hub/benthos-umh/v2/plugins/csv_plugin"
 	_ "github.com/united-manufacturing-hub/benthos-umh/v2/plugins/influxdb"
 	_ "github.com/united-manufacturing-hub/benthos-umh/v2/plugins/modbus_plugin"

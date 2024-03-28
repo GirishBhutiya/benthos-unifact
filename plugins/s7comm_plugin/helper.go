@@ -43,6 +43,7 @@ type S7DataItemWithAddressAndConverter struct {
 	Address       string
 	ConverterFunc converterFunc
 	Item          gos7.S7DataItem
+	oldValue      []byte
 }
 type subscriptionD struct {
 	ID        int

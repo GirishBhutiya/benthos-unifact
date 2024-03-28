@@ -11,19 +11,13 @@ input:
 pipeline:
   processors:
     - bloblang: |
-        root = meta("Message").parse_json()
-        root.value = meta("value")
         root.timestamp_ms = (timestamp_unix_nano() / 1000000).floor()
-        root.trigger = meta("trigger")
+        root.trigger = meta("tag_name")
         root.group = meta("group")
         root.db = meta("db")
         root.historian = meta("historian")
         root.sqlSp = meta("sqlSp")
-        root.value = if meta("datatype") != "string" {
-          root.value.number()
-        } else {
-          root.value.string()
-        }
+        root.value = this
         
 
 output:

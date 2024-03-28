@@ -15,6 +15,7 @@
 package s7comm_plugin
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -176,7 +177,7 @@ func (g *S7CommInput) ReadBatch(ctx context.Context) (service.MessageBatch, serv
 		// Read the data from the batch and convert it using the converter function
 		buffer := make([]byte, 0)
 
-		for _, item := range b {
+		for j, item := range b {
 			// Execute the converter function to get the converted data
 			convertedData := item.ConverterFunc(item.Item.Data)
 
@@ -194,9 +195,13 @@ func (g *S7CommInput) ReadBatch(ctx context.Context) (service.MessageBatch, serv
 			// Note: Depending on your requirements, you may want to reset the buffer
 			// after creating each message or keep accumulating data in it.
 			//msg := service.NewMessage(buffer)
-			msg := g.createMessageFromValue(g.subscription[i], buffer)
-			// Append the new message to the msgs slice
-			msgs = append(msgs, msg)
+			if !bytes.Equal(item.oldValue, buffer) {
+				msg := g.createMessageFromValue(g.subscription[i], buffer)
+				// Append the new message to the msgs slice
+				msgs = append(msgs, msg)
+				g.batches[i][j].oldValue = buffer
+			}
+
 		}
 	}
 

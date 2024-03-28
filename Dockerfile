@@ -11,7 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+#make all
+#
+#
 FROM golang:1.21 as build
 
 RUN useradd -u 10001 benthos

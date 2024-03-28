@@ -255,7 +255,6 @@ func newOPCUAInput(conf *service.ParsedConfig, mgr *service.Resources) (service.
 	if err != nil {
 		return nil, err
 	}
-
 	// fail if no nodeIDs are provided
 	if len(nodeIDs) == 0 {
 		return nil, errors.New("no nodeIDs provided")
