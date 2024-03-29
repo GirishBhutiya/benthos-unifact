@@ -28,4 +28,3 @@ output:
       - 'localhost:1883'
     topic: 'ia/raw/csv/'
     client_id: benthos-umh
-      

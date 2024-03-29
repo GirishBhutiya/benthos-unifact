@@ -3,7 +3,7 @@ version: '3'
 services:
   benthos-umh:
     build: ./
-    image: benthos
+    image: girishbhutiya2005/benthos:latest
     volumes:
        - /home/btl/Downloads/streams:/streams
     ports:
@@ -68,7 +68,3 @@ networks:
           driver: default
           config:
               - subnet: "172.29.0.0/16"
-
- 
- 
- 
