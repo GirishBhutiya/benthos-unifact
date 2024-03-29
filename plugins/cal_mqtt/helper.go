@@ -39,7 +39,7 @@ func parseMergeTopics(mergeTopicString []string) []mergeTopics {
 			mTopic.topics = subTopics
 
 		}
-		log.Println(mTopic)
+		//log.Println(mTopic)
 		topics[i] = mTopic
 	}
 	return topics

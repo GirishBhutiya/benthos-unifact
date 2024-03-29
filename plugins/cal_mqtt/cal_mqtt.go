@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"log"
 	"sync"
 	"time"
 
@@ -231,7 +230,7 @@ func (g *mqttReader) ReadBatch(ctx context.Context) (service.MessageBatch, servi
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to unmarshal message payload into JSON: %w", err)
 		} */
-		log.Println(compareTopic(msg.Topic(), g.inputTopics.topic) && !bytes.Equal(g.oldValue[msg.Topic()], msg.Payload()))
+		//log.Println(compareTopic(msg.Topic(), g.inputTopics.topic) && !bytes.Equal(g.oldValue[msg.Topic()], msg.Payload()))
 		if compareTopic(msg.Topic(), g.inputTopics.topic) && !bytes.Equal(g.oldValue[msg.Topic()], msg.Payload()) {
 
 			//log.Println("Parsed elements:", getElementsParsed(g.mergeTopics, msg.Topic(), c))
@@ -256,7 +255,6 @@ func (g *mqttReader) ReadBatch(ctx context.Context) (service.MessageBatch, servi
 				return nil
 			}, nil */
 		} else {
-			log.Println("Girish Same message come")
 			for i, v := range g.mergeTopics {
 				for j, h := range v.topics {
 					if msg.Topic() == h.topic {

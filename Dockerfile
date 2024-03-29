@@ -31,7 +31,7 @@ RUN go mod download
 
 COPY ./cmd ./cmd
 COPY ./plugins ./plugins
-COPY ./streams ./streams
+#COPY ./streams ./streams
 COPY ./config ./config
 #COPY ./s7comm_plugin ./s7comm_plugin
 COPY .goreleaser.yaml ./
@@ -46,7 +46,7 @@ COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=build /etc/passwd /etc/passwd
 COPY --from=build /go/src/github.com/GirishBhutiya/benthos-umh/main benthos
 COPY ./config/ ./config
-COPY ./streams ./streams
+#COPY ./streams ./streams
 COPY ./templates /templates
 
 ENTRYPOINT ["/benthos"]

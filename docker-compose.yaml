@@ -4,8 +4,8 @@ services:
   benthos-umh:
     build: ./
     image: benthos
-    # volumes:
-    #   - D:\Tech\upwork\P1\unifact_Benthos2\config\redis_mqtt.yaml:/benthos.yaml
+    volumes:
+       - /home/btl/Downloads/streams:/streams
     ports:
       - 4195:4195
     networks:
