@@ -3,7 +3,7 @@ version: '3'
 services:
   benthos-umh:
     build: ./
-    image: girishbhutiya2005/benthos:latest
+    image: benthos
     volumes:
        - /home/btl/Downloads/streams:/streams
     ports:

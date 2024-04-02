@@ -36,7 +36,7 @@ COPY ./config ./config
 #COPY ./s7comm_plugin ./s7comm_plugin
 COPY .goreleaser.yaml ./
 RUN echo 'project_name: app' >> .goreleaser.yaml
-RUN goreleaser build --single-target --snapshot --rm-dist --id benthos --output ./main
+RUN goreleaser build --single-target --snapshot --clean --id benthos --output ./main
 
 FROM busybox as app
 
@@ -47,7 +47,7 @@ COPY --from=build /etc/passwd /etc/passwd
 COPY --from=build /go/src/github.com/GirishBhutiya/benthos-umh/main benthos
 COPY ./config/ ./config
 #COPY ./streams ./streams
-COPY ./templates /templates
+#COPY ./templates /templates
 
 ENTRYPOINT ["/benthos"]
 

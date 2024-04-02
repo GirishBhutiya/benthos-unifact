@@ -197,7 +197,7 @@ dist
 .pnp.*
 
 # Docker exceptions
-.github
+#.github
 .dockerignore
 .editorconfig
 .git
