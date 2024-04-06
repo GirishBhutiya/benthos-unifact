@@ -16,47 +16,17 @@
 #
 FROM golang:1.21 as build
 
-RUN useradd -u 10001 benthos
-
-RUN echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' \
-  | tee /etc/apt/sources.list.d/goreleaser.list \
- && apt-get update \
- && apt-get install -y --no-install-recommends goreleaser \
- && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /go/src/github.com/GirishBhutiya/benthos-umh
-
-COPY go.mod go.mod 
-COPY go.sum go.sum 
-RUN go mod download
-
-COPY cmd cmd
-COPY plugins plugins
-#COPY ./streams ./streams
-#COPY ./config ./config
-#COPY ./s7comm_plugin ./s7comm_plugin
-COPY .goreleaser.yaml .goreleaser.yaml
-RUN echo 'project_name: app' >> .goreleaser.yaml
-RUN goreleaser build --single-target --snapshot --clean --id benthos --output ./main
-
-FROM busybox as app
-
 WORKDIR /
 
-COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=build /etc/passwd /etc/passwd
-COPY --from=build /go/src/github.com/GirishBhutiya/benthos-umh/main benthos
-#COPY ./config/ ./config
-#COPY ./streams ./streams
-#COPY ./templates /templates
+COPY ./build ./build
 
-ENTRYPOINT ["/benthos"]
+ENTRYPOINT ["/build/benthos-linux-amd64"]
 
 #CMD ["-c", "/config/opctrigger.yaml", "-t", "/templates/*.yaml"]
-CMD ["streams", "/streams/*.yaml"]
+#CMD ["streams", "/streams/*.yaml"]
 
 EXPOSE 4195
 
-USER benthos
+#USER benthos
 
-LABEL org.opencontainers.image.source https://github.com/GirishBhutiya/benthos-umh
+#LABEL org.opencontainers.image.source https://github.com/GirishBhutiya/benthos-umh
