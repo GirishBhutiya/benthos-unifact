@@ -18,12 +18,13 @@ FROM golang:1.21 as build
 
 WORKDIR /
 
-COPY ./build ./build
+#COPY ./build ./build
+COPY ./build/benthos-linux-arm64 benthos
 
-ENTRYPOINT ["/build/benthos-linux-amd64"]
+ENTRYPOINT ["/benthos"]
 
 #CMD ["-c", "/config/opctrigger.yaml", "-t", "/templates/*.yaml"]
-#CMD ["streams", "/streams/*.yaml"]
+CMD ["streams", "/streams/*.yaml"]
 
 EXPOSE 4195
 
