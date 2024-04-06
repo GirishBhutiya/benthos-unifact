@@ -23,7 +23,7 @@
 dist
 package
 target
-
+build
 # Environment versions file
 .versions
 

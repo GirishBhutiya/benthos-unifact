@@ -26,15 +26,16 @@ RUN echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' \
 
 WORKDIR /go/src/github.com/GirishBhutiya/benthos-umh
 
-COPY go.mod go.sum ./
+COPY go.mod go.mod 
+COPY go.sum go.sum 
 RUN go mod download
 
-COPY ./cmd ./cmd
-COPY ./plugins ./plugins
+COPY cmd cmd
+COPY plugins plugins
 #COPY ./streams ./streams
-COPY ./config ./config
+#COPY ./config ./config
 #COPY ./s7comm_plugin ./s7comm_plugin
-COPY .goreleaser.yaml ./
+COPY .goreleaser.yaml .goreleaser.yaml
 RUN echo 'project_name: app' >> .goreleaser.yaml
 RUN goreleaser build --single-target --snapshot --clean --id benthos --output ./main
 
@@ -45,7 +46,7 @@ WORKDIR /
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=build /etc/passwd /etc/passwd
 COPY --from=build /go/src/github.com/GirishBhutiya/benthos-umh/main benthos
-COPY ./config/ ./config
+#COPY ./config/ ./config
 #COPY ./streams ./streams
 #COPY ./templates /templates
 
