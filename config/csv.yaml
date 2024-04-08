@@ -20,8 +20,6 @@ pipeline:
         root.db = meta("db")
         root.historian = meta("historian")
         root.sqlSp = meta("sqlSp")
-    
-
 output:
   mqtt:
     urls:
