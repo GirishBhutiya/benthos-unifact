@@ -4,7 +4,7 @@ input:
     timeout: 10             # Timeout in seconds for connections and requests. Default to 10
     subscriptions:
        - '{"1": [{"address": "tag1", "name":"Pressure", "datatype":"int16","group": "D001", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'
-       - '{"2": [{"address": "tag2", "name":"Temperature", "datatype":"str","group": "D002", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'
+       - '{"2": [{"address": "tag2", "name":"Temperature", "datatype":"string","group": "D002", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'
 pipeline:
   processors:
     - bloblang: |
