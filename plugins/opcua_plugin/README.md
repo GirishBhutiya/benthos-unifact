@@ -6,12 +6,12 @@ Please use the below format to read from OPCUA.
 
 ```{"1": [{"node": "ns=2;s=Pressure", "name":"Pressure", "group": "D001", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}```
 
-**node:** node id which you want to read.
-**name:** which you want in the output
-**group:** group name
-**db:** db name 
-**historian:** historian name
-**sqlSp:** stored procedure name
+**node:** node id which you want to read.<br />
+**name:** which you want in the output<br />
+**group:** group name<br />
+**db:** db name <br />
+**historian:** historian name<br />
+**sqlSp:** stored procedure name<br />
 
 **Please use the below format to subscribe to OPCUA**
 ```

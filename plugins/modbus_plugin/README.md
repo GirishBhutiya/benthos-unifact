@@ -6,13 +6,13 @@ Please use the below format to read from Modbus.
 
 ```{"1": [{"address": "1", "addresstype":"inputregister","name":"Pressure", "group": "D001", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}```
 
-**address:** Modbus address which you want to read.
-**addresstype:** Modbus address type like inputregister, coils, discrete, and holding
-**name:** which you want in the output
-**group:** group name
-**db:** db name 
-**historian:** historian name
-**sqlSp:** stored procedure name
+**address:** Modbus address which you want to read.<br />
+**addresstype:** Modbus address type like inputregister, coils, discrete, and holding<br />
+**name:** which you want in the output<br />
+**group:** group name<br />
+**db:** db name <br />
+**historian:** historian name<br />
+**sqlSp:** stored procedure name<br />
 
 ```
 modbus:
