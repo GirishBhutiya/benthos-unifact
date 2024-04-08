@@ -15,13 +15,13 @@ input:
     file: "/HMITT.csv"
     node: '{"1": [{"name":"Pressure", "group": "D001", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'
 ```	
-**sourcetype:** can be networkpath or ftp. if set ftp then ftphost,ftpusername, ftppassword and ftpport is required. if networkpath is set then a file path is required.
-**file:** filename with extension. 
-**timeout:** time to set timeout time
-**ftphost:** ftp host URL
-**ftpusername:** username of ftphost
-**ftppassword:** password of ftphost
-**ftpport:** ftp port 21 or 22
-**node:** parameter which you want in the output.
+**sourcetype:** can be networkpath or ftp. if set ftp then ftphost,ftpusername, ftppassword and ftpport is required. if networkpath is set then a file path is required.\n
+**file:** filename with extension. \n
+**timeout:** time to set timeout time\n
+**ftphost:** ftp host URL\n
+**ftpusername:** username of ftphost\n
+**ftppassword:** password of ftphost\n
+**ftpport:** ftp port 21 or 22\n
+**node:** parameter which you want in the output.\n
 
 **The plugin will read the last row of the CSV file and send it to output with the node. Once there is a new row and the last row value changes it will send that row to output.**
