@@ -43,22 +43,30 @@ services:
       - 1883:1883
     networks:
       - benthos
-
-  opcua:
-     container_name: opcsimulator1
-     image: opcsimulator
-     ports:
-       - 46010:46010
-     networks:
-       - benthos
- 
-  influxdb:
-    container_name: influxdb
-    image: influxdb
+  mssql-db:
+    container_name: mssql-db
+    image: mcr.microsoft.com/mssql/server
     ports:
-      - 8086:8086
-    networks:
-      - benthos
+      - "1433:1433"
+    environment:
+      SA_PASSWORD: "Password99"
+      ACCEPT_EULA: "Y"
+
+  #opcua:
+  #   container_name: opcsimulator1
+  #   image: opcsimulator
+  #   ports:
+  #     - 46010:46010
+  #   networks:
+  #     - benthos
+ 
+  #influxdb:
+  #  container_name: influxdb
+  #  image: influxdb
+  #  ports:
+  #    - 8086:8086
+  #  networks:
+  #    - benthos
  
  
 networks:

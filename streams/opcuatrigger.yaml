@@ -30,7 +30,7 @@ pipeline:
         let gmeta = "%s, %s, %s, %s".format($one,$two,$three,$four)
 
         let query = meta("Message").replace_all("{","").replace_all("}","").split(",").map_each(item -> " %s%s".format("@",item)).string().replace_all("\"","").replace_all("\\","").replace_all("[","").replace_all("]","").replace_all(":","=")
-        #root.query = "exec " + meta("sqlSp")+ " " + $query + ", " + $gmeta
+        root.query = "exec " + meta("sqlSp")+ " " + $query + ", " + $gmeta
 
 output:
   broker:
@@ -43,3 +43,4 @@ output:
           urls:
             - 'tcp://mqtt:1883'
           topic: 'ia/raw/opcuatrigger/${! meta("opcua_path") }'
+          client_id: benthos-umh

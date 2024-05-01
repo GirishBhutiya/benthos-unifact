@@ -43,3 +43,9 @@ targetwin:
 		--output tmp\bin\benthos.exe
 buildwin:
 	@goreleaser
+
+dockerpush:
+	docker buildx build  \
+--tag unifactmanufacturinghub/benthos:latest  \
+--platform linux/arm/v7,linux/arm64/v8,linux/amd64  \
+--builder benthos-container  --push .

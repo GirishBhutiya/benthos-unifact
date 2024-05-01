@@ -18,7 +18,8 @@ input:
     endpoint: "opc.tcp://localhost:46010"
     nodeIDs:
       - '{"1": [{"node": "ns=2;s=Pressure", "name":"Pressure", "mtopic":"runtime","group": "D001", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'
-      - '{"2": [{"node": "ns=2;s=Temperature", "name":"Temperature", "mtopic":"runtime", "group": "D002", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'
+      - '{"2": [{"node": "ns=2;s=Tem perature", "name":"Temperature", "mtopic":"runtime", "group": "D002", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'
+      - '{"1": [{"node": "ns=2;s=TwinCat.AFP-DC1.D001.Shot_Signal","dataType": "bool","name": "D001_shots","logging_sql": "false","logging_influx": "true","group": "D001", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]},"group": "D001", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'
     subscribeEnabled: true
     insecure: true
 

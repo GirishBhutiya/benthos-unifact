@@ -9,8 +9,8 @@ fi
 #package_name=${package_split[-1]}
 package_name="build/benthos"
     
-platforms=("linux/arm64" "linux/amd64" "windows/amd64") #"windows/386" 
-
+#platforms=("linux/arm64" "linux/amd64" "windows/amd64" "linux/386" "windows/386") # 
+platforms=("linux/386") # 
 for platform in "${platforms[@]}"
 do
     platform_split=(${platform//\// })

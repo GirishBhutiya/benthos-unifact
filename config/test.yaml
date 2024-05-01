@@ -1,0 +1,16 @@
+input:
+  opcuatrigger:
+    endpoint: opc.tcp://ip:port
+pipeline:
+  processors:
+    - bloblang: |
+        root = meta("Message").parse_json()
+        let one = "%s%s= '%s'".format("@", "group", meta("group"))
+output:
+  broker:
+    pattern: fan_out
+    outputs:
+      - sql_raw:
+          driver: "mssql" # No default (required)
+          dsn: ""
+          query: ${!meta("one")}
