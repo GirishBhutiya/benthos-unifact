@@ -51,16 +51,6 @@ pipeline:
         root.db = meta("db")
         root.historian = meta("historian")
         root.sqlSp = meta("sqlSp")
-
-        let one = "%s%s= '%s'".format("@", "group", meta("group"))
-        let two = "%s%s= '%s'".format("@", "trigger", meta("opcua_path"))
-        let three = "%s%s= %s".format("@", "timestamp_ms", root.timestamp_ms.string())
-        let four = "%s%s= %s".format("@", "value", root.value)
-        let gmeta = "%s, %s, %s, %s".format($one,$two,$three,$four)
-
-        let query = meta("Message").replace_all("{","").replace_all("}","").split(",").map_each(item -> " %s%s".format("@",item)).string().replace_all("\"","").replace_all("\\","").replace_all("[","").replace_all("]","").replace_all(":","=")
-        meta spq = "exec " + meta("sqlSp")+ " " + $query + ", " + $gmeta
-    
 output:
   broker:
     pattern: fan_out
@@ -72,11 +62,6 @@ output:
           user: "admin"
           password: "admin123"
           client_id: "afp-trigger"
-      - sql_raw:
-          driver: "mssql" # No default (required)
-          dsn: "sqlserver://rcmi-svc-mes:@A1dBr6J4o2%@10.0.0.18:1433?database=AFp_MES_DB"
-          query: ${!meta("spq")}
-          unsafe_dynamic_query: true
       - influxdb:
           endpoint: http://10.2.0.6:8086
           username: admin

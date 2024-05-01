@@ -65,11 +65,23 @@ output:
   broker:
     pattern: fan_out
     outputs:
+      - mqtt:
+          urls:
+            - tcp://10.2.0.6:1883
+          topic: UMH/V1/AFP/DCM/${! meta("group") }/trigger/${! meta("opcua_path") }
+          user: "admin"
+          password: "admin123"
+          client_id: "afp-trigger"
       - sql_raw:
           driver: "mssql" # No default (required)
           dsn: "sqlserver://rcmi-svc-mes:@A1dBr6J4o2%@10.0.0.18:1433?database=AFp_MES_DB"
           query: ${!meta("spq")}
           unsafe_dynamic_query: true
-        processors:
-        - bloblang: |
-            root.name = this.name.lowercase()
+      - influxdb:
+          endpoint: http://10.2.0.6:8086
+          username: admin
+          password: admin123
+          token: BSNnByRccLkjEULGg1aA78tO0uGgwk2uJLz6EUlw1qh5uIFG9jmkDV8dW6tPQQExiVIITNDlpywJ8HoWEgLbuQ==
+          org: RCM
+          bucket: UMH_V1_AFP_DCM_trigger
+          precision: ns
