@@ -3,7 +3,9 @@ version: '3'
 services:
   benthos-umh:
     build: ./
-    image: benthos
+    image: unifactmanufacturinghub/benthos-linuxarm64:latest
+    #unifactmanufacturinghub/benthos-linux386:latest
+    #unifactmanufacturinghub/benthos-linuxamd64:latest
     volumes:
        - /home/btl/Downloads/streams:/streams
     ports:
