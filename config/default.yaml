@@ -17,9 +17,8 @@ input:
   opcua:
     endpoint: "opc.tcp://localhost:46010"
     nodeIDs:
-      - '{"1": [{"node": "ns=2;s=Pressure", "name":"Pressure", "mtopic":"runtime","group": "D001", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'
-      - '{"2": [{"node": "ns=2;s=Tem perature", "name":"Temperature", "mtopic":"runtime", "group": "D002", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'
-      - '{"1": [{"node": "ns=2;s=TwinCat.AFP-DC1.D001.Shot_Signal","dataType": "bool","name": "D001_shots","logging_sql": "false","logging_influx": "true","group": "D001", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]},"group": "D001", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'
+      - '{"1": [{"node": "ns=2;s=Pressure", "name":"PressureName", "mtopic":"runtime","group": "D001", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'
+      - '{"2": [{"node": "ns=2;s=Temperature", "name":"Temperature", "mtopic":"runtime", "group": "D002", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'
     subscribeEnabled: true
     insecure: true
 
@@ -32,9 +31,30 @@ pipeline:
         root.db = meta("db")
         root.historian = meta("historian")
         root.sqlSp = meta("sqlSp")
+        root.name = meta("name")
+
+        let one = "%s%s= '%s'".format("@", "group", meta("group"))
+        let three = "%s%s= %s".format("@", "timestamp_ms", root.timestamp_ms.string())
+        let four = "%s%s= %s".format("@", "value", root.value)
+        let gmeta = "%s, %s, %s".format($one,$three,$four)
+
+        let query = meta("Message").replace_all("{","").replace_all("}","").split(",").map_each(item -> " %s%s".format("@",item)).string().replace_all("\"","").replace_all("\\","").replace_all("[","").replace_all("]","").replace_all(":","=")
+        root.json = meta("Message").replace_all("{","").replace_all("}","")
+        meta spq = "exec " + meta("sqlSp")+ " " + $query + ", " + $gmeta
+        let g = "exec " + meta("sqlSp")+ " " + $query + ", " + $gmeta
+        root.query = $g
 output:
-  mqtt:
-    urls:
-      - 'localhost:1883'
-    topic: 'ia/raw/opcua/${! meta("opcua_path") }'
-    client_id: benthos-umh
+  broker:
+    pattern: fan_out
+    outputs:
+      - mqtt:
+          urls:
+            - 'localhost:1883'
+          topic: 'ia/raw/opcua/${! meta("opcua_path") }'
+      
+  
+  #mqtt:
+  #  urls:
+  #    - 'localhost:1883'
+  #  topic: 'ia/raw/opcua/${! meta("opcua_path") }'
+  #  client_id: benthos-umh

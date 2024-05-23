@@ -3,7 +3,6 @@ package opcua_plugin
 import (
 	"crypto/rand"
 	"encoding/json"
-	"fmt"
 	"math/big"
 
 	"github.com/gopcua/opcua/ua"
@@ -58,7 +57,7 @@ func ParseTriggerNodeIDs(incomingTNodes []string) []*ua.NodeID {
 		for _, values := range tNodeObj {
 			for _, obj := range values {
 
-				fmt.Println(obj)
+				//fmt.Println(obj)
 
 				nodeID := obj["node"]
 				parsedTNodeID, err := ua.ParseNodeID(nodeID)

@@ -46,6 +46,28 @@ buildwin:
 
 dockerpush:
 	docker buildx build  \
---tag unifactmanufacturinghub/benthos:latest  \
---platform linux/arm/v7,linux/arm64/v8,linux/amd64  \
+--tag unifactmanufacturinghub/benthos:0.0.3  \
+--platform "linux/arm/v7,linux/arm64/v8,linux/arm64,linux/amd64"  \
 --builder benthos-container  --push .
+
+dockerpusharm:
+	docker buildx build  \
+--tag unifactmanufacturinghub/benthos:linuxarmamd  \
+--platform "linux/arm64,linux/amd64"  \
+--builder benthos-container  --push .
+
+dockerpushamd:
+	docker buildx build  \
+--tag unifactmanufacturinghub/benthos:linuxamd0.1  \
+--platform "linux/amd64"  \
+--builder benthos-container  --push .
+
+dockermanifest:
+	docker manifest create \
+unifactmanufacturinghub/benthos-umh:latest \
+--amend unifactmanufacturinghub/benthos-linux386:latest \
+--amend unifactmanufacturinghub/benthos-linuxamd64:latest \
+--amend unifactmanufacturinghub/benthos-linuxarm64:latest
+
+#dockerimgpull
+#	docker pull --platform=linux/arm64 unifactmanufacturinghub/benthos:linuxarm

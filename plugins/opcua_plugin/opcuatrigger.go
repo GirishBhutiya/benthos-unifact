@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+
 	"regexp"
 	"strconv"
 	"strings"
@@ -660,7 +661,6 @@ func (g *OPCUATriInput) Connect(ctx context.Context) error {
 // createMessageFromValue creates a benthos messages from a given variant and nodeID
 // theoretically nodeID can be extracted from variant, but not in all cases (e.g., when subscribing), so it it left to the calling function
 func (g *OPCUATriInput) createMessageFromValue(variant *ua.Variant, node TNodeDef, nodeID string, msgs map[string]string) *service.Message {
-
 	if variant == nil {
 		g.log.Errorf("Variant is nil")
 		return nil
@@ -994,7 +994,6 @@ func (g *OPCUATriInput) logCertificateInfo(certBytes []byte) {
 }
 
 func (g *OPCUATriInput) detectTriggerNodeIDs(ctx context.Context) error {
-
 	// Create a slice to store the detected trigger nodes
 	tNodeList := make([]TNodeDef, 0)
 
@@ -1031,7 +1030,6 @@ func (g *OPCUATriInput) detectTriggerNodeIDs(ctx context.Context) error {
 }
 
 func (g *OPCUATriInput) detectBatchTriggerNodeIDs(ctx context.Context) error {
-
 	// Create a slice to store the detected trigger nodes
 	batchTNodeListMapping := make(map[string][]TNodeDef, 0)
 
@@ -1163,7 +1161,6 @@ func (g *OPCUATriInput) ReadTriggerBatchPull(ctx context.Context, node TNodeDef,
 }
 
 func (g *OPCUATriInput) ReadTriggerBatchSubscribe(ctx context.Context) (service.MessageBatch, service.AckFunc, error) {
-
 	var res *opcua.PublishNotificationData
 
 	if ctx == nil || ctx.Done() == nil {

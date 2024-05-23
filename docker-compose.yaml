@@ -1,28 +1,7 @@
 version: '3'
  
 services:
-  benthos-umh:
-    build: ./
-    image: unifactmanufacturinghub/benthos-linuxarm64:latest
-    #unifactmanufacturinghub/benthos-linux386:latest
-    #unifactmanufacturinghub/benthos-linuxamd64:latest
-    volumes:
-       - /home/btl/Downloads/streams:/streams
-    ports:
-      - 4195:4195
-    networks:
-      - benthos
- 
-  redis:
-    container_name: redis
-    image: redis
-    # command: redis-server --requirepass superpassword
-    restart: unless-stopped
-    tty: true
-    ports:
-      - 6379:6379
-    networks:
-      - benthos
+  
  
   node-red:
     container_name: nodered
@@ -45,6 +24,32 @@ services:
       - 1883:1883
     networks:
       - benthos
+  kafka:
+    container_name: kafka-benthos
+    image: bitnami/kafka:latest
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    networks:
+      - benthos
+    environment:
+     # KRaft settings
+      - KAFKA_CFG_NODE_ID=0
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
+      - KAFKA_CFG_SASL_MECHANISM_INTER_BROKER_PROTOCOL=PLAIN
+      - KAFKA_CFG_SASL_MECHANISM_CONTROLLER_PROTOCOL=PLAIN
+      - KAFKA_SASL_ENABLED_MECHANISMS=PLAIN
+      # Listeners
+      - KAFKA_CFG_LISTENERS=INTERNAL://kafka-benthos:9092,CONTROLLER://kafka-benthos:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=INTERNAL://192.168.50.111:9092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:SASL_PLAINTEXT,INTERNAL:PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=INTERNAL
+      - KAFKA_CONTROLLER_USER=user
+      - KAFKA_CONTROLLER_PASSWORD=bitnami
+      - KAFKA_CLIENT_USERS=user
+      - KAFKA_CLIENT_PASSWORDS=bitnami    
   mssql-db:
     container_name: mssql-db
     image: mcr.microsoft.com/mssql/server
@@ -53,7 +58,28 @@ services:
     environment:
       SA_PASSWORD: "Password99"
       ACCEPT_EULA: "Y"
-
+  benthos-umh:
+    build: ./
+    image: unifactmanufacturinghub/benthos:0.0.2
+    #unifactmanufacturinghub/benthos-linux386:latest
+    #unifactmanufacturinghub/benthos-linuxamd64:latest
+    volumes:
+       - /home/btl/Downloads/streams:/streams
+    ports:
+      - 4195:4195
+    networks:
+      - benthos
+ 
+  redis:
+    container_name: redis
+    image: redis
+    # command: redis-server --requirepass superpassword
+    restart: unless-stopped
+    tty: true
+    ports:
+      - 6379:6379
+    networks:
+      - benthos
   #opcua:
   #   container_name: opcsimulator1
   #   image: opcsimulator

@@ -1,10 +1,13 @@
-FROM golang:1.22.0 as build
+FROM --platform=$BUILDPLATFORM golang:1.22.0 as build
 
 WORKDIR /
 
 #COPY ./build ./build
-COPY ./build/benthos-linux-amd64 benthos
-COPY ./streams streams
+#COPY ./build/benthos-linux-386 benthos
+
+COPY ./ /
+
+RUN go build -o benthos ./cmd/benthos/*.go
 
 #CMD [ "benthos" ]
 ENTRYPOINT ["/benthos"]

@@ -24,27 +24,27 @@ pipeline:
         root.db = meta("db")
         root.historian = meta("historian")
         root.sqlSp = meta("sqlSp")
+        root.func = jsontosp(meta("Message"))
 
-        let one = "%s%s= '%s'".format("@", "group", meta("group"))
-        let two = "%s%s= '%s'".format("@", "trigger", meta("opcua_path"))
-        let four = "%s%s= %s".format("@", "value", root.value)
+        let one = "%s%s='%s'".format("@", "group", meta("group"))
+        let two = "%s%s='%s'".format("@", "trigger", meta("opcua_path"))
+        let four = "%s%s=%s".format("@", "value", this)
         let gmeta = "%s, %s, %s".format($one,$two,$four)
+        meta spq = "exec " + meta("sqlSp")+ " " + jsontosp(meta("Message")) +  $gmeta
+        let g = "exec " + meta("sqlSp")+ " " + jsontosp(meta("Message")) +  $gmeta
+        root.query = $g
 
-        let query = meta("Message").replace_all("{","").replace_all("}","").split(",").map_each(item -> " %s%s".format("@",item)).string().replace_all("\"","").replace_all("\\","").replace_all("[","").replace_all("]","").replace_all(":","=")
-        meta spq = "exec " + meta("sqlSp")+ " " + $query + ", " + $gmeta
-        root.query = "exec " + meta("sqlSp")+ " " + $query + ", " + $gmeta
 output:
   broker:
     pattern: fan_out
     outputs:
-      - sql_raw:
-          driver: "mssql" # No default (required)
-          dsn: "sqlserver://SA:Password99@localhost:1433?database=benthos"
-          query: ${!meta("spq")}
-          unsafe_dynamic_query: true
-            
       - mqtt:
           urls:
             - 'localhost:1883'
           topic: 'ia/raw/opcuatrigger/${! meta("opcua_path") }'
           client_id: benthos-umh
+      #- sql_raw:
+      #    driver: "mssql" # No default (required)
+      #    dsn: "sqlserver://SA:Password99@localhost:1433?database=benthos"
+      #    query: ${!meta("spq")}
+      #    unsafe_dynamic_query: true

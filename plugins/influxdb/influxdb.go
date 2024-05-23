@@ -4,7 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"log"
-	"strconv"
+	"reflect"
+	"strings"
 	"time"
 
 	"github.com/benthosdev/benthos/v4/public/service"
@@ -105,6 +106,10 @@ func (i *InfluxDBOutput) Write(ctx context.Context, msg *service.Message) error 
 
 	currMsg := make(map[string]interface{})
 	err = json.Unmarshal([]byte(content), &currMsg)
+	if err != nil {
+		log.Println("currMsg:", currMsg)
+		return err
+	}
 	fields := make(map[string]interface{})
 	tags := make(map[string]string)
 
@@ -126,7 +131,26 @@ func (i *InfluxDBOutput) Write(ctx context.Context, msg *service.Message) error 
 		if floatValue, ok := val.(float64); ok {
 			fields[key] = floatValue
 		} else {
-			boolValue, err := strconv.ParseBool(val.(string))
+			switch reflect.ValueOf(val).Kind() {
+			case reflect.Bool:
+				boolValue := val.(bool)
+
+				if boolValue {
+					fields[key] = 1
+				} else {
+					fields[key] = 0
+				}
+			case reflect.String:
+				if strings.Contains(val.(string), "true") {
+					fields[key] = 1
+				} else if strings.Contains(val.(string), "false") {
+					fields[key] = 0
+				}
+			case reflect.Float64:
+				fields[key] = val.(float64)
+			}
+
+			/* boolValue, err := strconv.ParseBool(val.(string))
 			if err == nil {
 
 				if boolValue {
@@ -134,15 +158,26 @@ func (i *InfluxDBOutput) Write(ctx context.Context, msg *service.Message) error 
 				} else {
 					fields[key] = 0
 				}
-				log.Println("key:", key, " value:", fields[key], " datatype:", tags["datatype"], " booltype:", boolValue)
+				//log.Println("key:", key, " value:", fields[key], " datatype:", tags["datatype"], " booltype:", boolValue)
+			}
+			if strings.Contains(val.(string), "true") {
+				fields[key] = 1
+			} else if strings.Contains(val.(string), "false") {
+				fields[key] = 0
+			}
+			if err != nil {
+				log.Println("val:", val)
+				return err
 			}
 			floatValue, err := strconv.ParseFloat(val.(string), 64)
 			if err != nil {
+				log.Println("err:", err)
 				continue
 			} else {
 				fields[key] = floatValue
-			}
+			} */
 		}
+		//log.Println("key:", key, " val:", val)
 	}
 
 	writeAPI := i.client.WriteAPIBlocking(i.org, i.bucket)

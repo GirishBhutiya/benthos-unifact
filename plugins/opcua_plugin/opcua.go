@@ -641,6 +641,7 @@ func (g *OPCUAInput) createMessageFromValue(variant *ua.Variant, node NodeDef, n
 	message.MetaSet("db", nodeElements[1])
 	message.MetaSet("historian", nodeElements[2])
 	message.MetaSet("sqlSp", nodeElements[3])
+	message.MetaSet("name", nodeElements[4])
 	trigMap[nodeElements[4]] = string(b)
 	jsonMsg, err := json.Marshal(trigMap)
 	if err != nil {
