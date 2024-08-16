@@ -52,13 +52,13 @@ dockerpush:
 
 dockerpusharm:
 	docker buildx build  \
---tag unifactmanufacturinghub/benthos:linuxarmamd  \
---platform "linux/arm64,linux/amd64"  \
+--tag unifactmanufacturinghub/benthos:linuxarm0.9  \
+--platform "linux/arm64"  \
 --builder benthos-container  --push .
 
 dockerpushamd:
 	docker buildx build  \
---tag unifactmanufacturinghub/benthos:linuxamd0.1  \
+--tag unifactmanufacturinghub/benthos:linuxamd0.6  \
 --platform "linux/amd64"  \
 --builder benthos-container  --push .
 

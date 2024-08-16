@@ -3,9 +3,9 @@ FROM golang:1.22.0 as build
 WORKDIR /
 
 #COPY ./build ./build
-COPY ./build/benthos-linux-amd64 benthos
+COPY ./build/benthos-linux-arm64 benthos
 COPY ./streams streams
-
+COPY ./cert ./cert
 #CMD [ "benthos" ]
 ENTRYPOINT ["/benthos"]
 

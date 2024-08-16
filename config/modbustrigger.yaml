@@ -27,9 +27,6 @@ pipeline:
         root.historian = meta("historian")
         root.sqlSp = meta("sqlSp")
         root.trigger = meta("name")
-        
-    
-
 output:
   mqtt:
     urls:

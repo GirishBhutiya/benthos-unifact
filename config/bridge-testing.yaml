@@ -1,0 +1,37 @@
+input:
+  opcua:
+    endpoint: "opc.tcp://localhost:46010"
+    nodeIDs:
+      - '{"1": [{"node": "ns=2;s=Pressure", "name":"PressureName", "mtopic":"runtime","group": "D001", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'
+      - '{"2": [{"node": "ns=2;s=Temperature", "name":"Temperature", "mtopic":"runtime", "group": "D002", "db": "mssql", "historian": "influx", "sqlSp": "sp_sql_logging"}]}'
+    subscribeEnabled: true
+    insecure: true
+pipeline:
+  processors:
+    - bloblang: |
+        root = meta("Message").parse_json()
+        root.timestamp_ms = (timestamp_unix_nano() / 1000000).floor()
+        root.group = meta("group")
+        root.db = meta("db")
+        root.historian = meta("historian")
+        root.sqlSp = meta("sqlSp")
+        root.name = meta("name")
+output:
+  broker:
+    pattern: fan_out
+    outputs:
+      - kafka:
+          addresses: 
+            - "mes-broker0.rcmindustries.com:443"
+          topic: "benthos" # No default (required)
+          client_id: benthos
+          sasl:
+            mechanism: none
+            user: "mes-user"
+            password: "NyyYnQtZBei1Mqzj13AJ7UsmJisBQ8pe"
+          tls:
+            enabled: true
+            skip_cert_verify: true
+            client_certs:
+              - cert_file: ./cert/client-cer.pem
+                key_file: ./cert/client-key.pem

@@ -472,3 +472,7 @@ output:
           org: RCM
           bucket: UMH_V1_INL_DCM_subscription
           precision: ns
+      - kafka:
+          addresses:
+            - mes-cluster-kafka-brokers.strimzi-kafka.svc.cluster.local:9092
+          topic: UMH.V1.INL.DCM.${! meta("group") }.subscription.${! meta("opcua_path") }

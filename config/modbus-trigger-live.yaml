@@ -1,0 +1,54 @@
+input:
+  modbustrigger:
+    endpoint: "172.16.14.211:502"
+    slaveid: 1
+    timeout: 10
+    subscriptions: 
+      - '{"1": [{"address": "41001", "addresstype":"holding","name":"D010_spc", "group": "D010_spc", "db": "mssql", "historian": "influx", "sqlSp": "MES_DCM_modbus_Prod_Process_benthos"}]}'
+    tsubscriptions:
+      - '{"1": [{"address":"41001","addresstype":"holding", "name": "ShotCounter_PLC"},{"address": "41022", "addresstype":"holding","name": "Fill_Time"},{"address": "41023", "addresstype":"holding","name": "Total_Shot_Time"},{"address": "41024", "addresstype":"holding","name": "Slow_Shot_Time"},{"address": "41025", "addresstype":"holding","name": "Fast_Shot_Time"},{"address": "41026", "addresstype":"holding","name": "Fast_Shot_Rise_Time"},{"address": "41027", "addresstype":"holding","name": "Cycle_Time"},{"address": "41033", "addresstype":"holding","name": "Biscuit_Length"},{"address": "41034", "addresstype":"holding","name": "Calc_Start_Fast_Shot"},{"address": "41035", "addresstype":"holding","name": "Intens_Pressure"},{"address": "41036", "addresstype":"holding","name": "Intense_Rise_Time"},{"address": "41037", "addresstype":"holding","name": "Eff_Peak_Intens"},{"address": "41038", "addresstype":"holding","name": "Impact_Pressure_To_Peak"},{"address": "41039", "addresstype":"holding","name": "Intense_Squeeze_Distance"},{"address": "41040", "addresstype":"holding","name": "Sleeve_Full_Velocity"},{"address": "41041", "addresstype":"holding","name": "Runner_Full_Velocity"},{"address": "41042", "addresstype":"holding","name": "Avg_Fill_Velocity"},{"address": "41043", "addresstype":"holding","name": "User_Velocity_Pos_One"},{"address": "41044", "addresstype":"holding","name": "User_Velocity_Pos_Two"},{"address": "41045", "addresstype":"holding","name": "User_Velocity_Pos_Three"},{"address": "41046", "addresstype":"holding","name": "User_Velocity_Pos_Four"},{"address": "41047", "addresstype":"holding","name": "User_Avg_Vel_Range_One"},{"address": "41048", "addresstype":"holding","name": "User_Avg_Vel_Range_Two"},{"address": "41049", "addresstype":"holding","name": "User_Avg_Vel_Range_Three"},{"address": "41050", "addresstype":"holding","name": "User_Avg_Vel_Range_Four"},{"address": "41051", "addresstype":"holding","name": "Position_P1"},{"address": "41052", "addresstype":"holding","name": "Position_P2"},{"address": "41053", "addresstype":"holding","name": "Position_P3"},{"address": "41054", "addresstype":"holding","name": "Avg_Slow_Shot_Velocity"},{"address": "41055", "addresstype":"holding","name": "Avg_Fast_Shot_Velocity"},{"address": "41056", "addresstype":"holding","name": "Fast_Shot_Distance"}]}'
+    subscribeEnabled: true
+pipeline:
+  processors:
+    - bloblang: |
+        root = meta("Message").parse_json()
+        root.value = meta("value")
+        root.timestamp_ms = (timestamp_unix_nano() / 1000000).floor()
+        root.group = meta("group")
+        root.db = meta("db")
+        root.historian = meta("historian")
+        root.sqlSp = meta("sqlSp")
+        root.trigger = meta("name")
+
+        let one = "%s%s='%s'".format("@", "group", meta("group"))
+        let two = "%s%s=%s".format("@", "timestamp_ms", root.timestamp_ms.string())
+        let three = "%s%s=%s".format("@", "value", root.value)
+        let four = "%s%s='%s'".format("@", "Machine", meta("group"))
+        let gmeta = "%s, %s, %s, %s".format($one,$two,$three,$four)
+        meta spq = "exec " + meta("sqlSp")+ " " + jsontosp(meta("Message")) + $gmeta
+        root.query = "exec " + meta("sqlSp")+ " " + jsontosp(meta("Message")) + $gmeta
+output:
+  broker:
+    pattern: fan_out
+    outputs:
+      - mqtt:
+          urls:
+            - tcp://10.0.0.56:1883
+          topic: trigger/${! meta("group") }
+          user: "user1"
+          password: "9jrKxe6u548LIKpl"
+          client_id: "afp-modbus-trigger"
+      - sql_raw:
+          driver: "mssql" # No default (required)
+          dsn: "sqlserver://rcmmes:rcmmes384@10.0.0.18:1433?database=AFp_MES_DB"
+          query: ${!meta("spq")}
+          unsafe_dynamic_query: true
+      - influxdb:
+          endpoint: http://10.2.0.6:8086
+          username: admin
+          password: admin123
+          token: BSNnByRccLkjEULGg1aA78tO0uGgwk2uJLz6EUlw1qh5uIFG9jmkDV8dW6tPQQExiVIITNDlpywJ8HoWEgLbuQ==
+          org: RCM
+          bucket: modbus_subscription
+          precision: ns
+      

@@ -136,15 +136,15 @@ func (i *InfluxDBOutput) Write(ctx context.Context, msg *service.Message) error 
 				boolValue := val.(bool)
 
 				if boolValue {
-					fields[key] = 1
+					fields[key] = 1.0
 				} else {
-					fields[key] = 0
+					fields[key] = 0.0
 				}
 			case reflect.String:
 				if strings.Contains(val.(string), "true") {
-					fields[key] = 1
+					fields[key] = 1.0
 				} else if strings.Contains(val.(string), "false") {
-					fields[key] = 0
+					fields[key] = 0.0
 				}
 			case reflect.Float64:
 				fields[key] = val.(float64)

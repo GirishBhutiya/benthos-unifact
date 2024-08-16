@@ -60,3 +60,8 @@ output:
           org: RCM
           bucket: UMH_V1_ANC_DCM_trigger
           precision: ns
+      - kafka:
+          addresses: 
+            - 10.42.0.92:9092
+          topic: trigger.${! meta("group") }
+          client_id: anc-trigger

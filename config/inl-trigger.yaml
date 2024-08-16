@@ -76,3 +76,18 @@ output:
           org: RCM
           bucket: UMH_V1_INL_DCM_trigger
           precision: ns
+      - kafka:
+          addresses: 
+            - 10.42.0.92:9092
+          topic: trigger.${! meta("group") }
+          client_id: inl-trigger
+          sasl:
+            mechanism: none
+            user: "mes-user"
+            password: "NyyYnQtZBei1Mqzj13AJ7UsmJisBQ8pe"
+          tls:
+            enabled: true
+            skip_cert_verify: true
+            client_certs:
+              - cert_file: ./cert/client-cer.pem
+                key_file: ./cert/client-key.pem

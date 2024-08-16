@@ -1,11 +1,9 @@
-version: '3'
+version: '3.8'
  
 services:
-  
- 
   node-red:
     container_name: nodered
-    image: nodered/node-red
+    image: nodered/node-red:latest
     ports:
       - "1880:1880"
       - "10502:10502"
@@ -22,8 +20,10 @@ services:
     restart: unless-stopped
     ports:
       - 1883:1883
+      - "9001:9001"
     networks:
       - benthos
+  
   kafka:
     container_name: kafka-benthos
     image: bitnami/kafka:latest
@@ -49,7 +49,9 @@ services:
       - KAFKA_CONTROLLER_USER=user
       - KAFKA_CONTROLLER_PASSWORD=bitnami
       - KAFKA_CLIENT_USERS=user
-      - KAFKA_CLIENT_PASSWORDS=bitnami    
+      - KAFKA_CLIENT_PASSWORDS=bitnami   
+      - KAFKA_AUTO_CREATE_TOPICS_ENABLE= true
+
   mssql-db:
     container_name: mssql-db
     image: mcr.microsoft.com/mssql/server
@@ -60,7 +62,7 @@ services:
       ACCEPT_EULA: "Y"
   benthos-umh:
     build: ./
-    image: unifactmanufacturinghub/benthos:0.0.2
+    image: unifactmanufacturinghub/benthos:linuxamd0.6
     #unifactmanufacturinghub/benthos-linux386:latest
     #unifactmanufacturinghub/benthos-linuxamd64:latest
     volumes:
@@ -80,13 +82,29 @@ services:
       - 6379:6379
     networks:
       - benthos
-  #opcua:
-  #   container_name: opcsimulator1
-  #   image: opcsimulator
-  #   ports:
-  #     - 46010:46010
-  #   networks:
-  #     - benthos
+  mqttkafkabridge:
+    image: unifactmanufacturinghub/mqttkafkabridge:linuxamd0.3
+    environment:
+      KAFKA_BOOTSTRAP_SERVER: kafka:9092
+      KAFKA_CLIENT_ID: benthos
+      KAFKA_USE_SSL: false
+      MQTT_BROKER_URL: mqtt:1883
+      MQTT_CERTIFICATE_NAME: NO_CERT
+      MY_POD_NAME: benthos
+      MQTT_TOPIC: ia/raw/opcua/#
+      KAFKA_LISTEN_TOPIC: ia/raw/opcua/#
+    depends_on:
+      - kafka
+      - MQTT
+    networks:
+      - benthos
+#  opcuasimulator:
+#     container_name: opcsimulator1
+#     image: unifactmanufacturinghub/opcsimulator:0.0.1
+#     ports:
+#       - 46010:46010
+#     networks:
+#       - benthos
  
   #influxdb:
   #  container_name: influxdb
