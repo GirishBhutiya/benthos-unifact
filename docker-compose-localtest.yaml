@@ -1,0 +1,22 @@
+version: '3.8'
+ 
+services:
+  benthos-umh:
+    build: ./
+    image: unifactmanufacturinghub/benthos:linuxarm0.9
+    #unifactmanufacturinghub/benthos-linux386:latest
+    #unifactmanufacturinghub/benthos-linuxamd64:latest
+    volumes:
+       - /home/btl/Downloads/streams:/streams
+    ports:
+      - 4195:4195
+    networks:
+      - benthos
+
+networks:
+  benthos:
+      driver: bridge
+      ipam:
+          driver: default
+          config:
+              - subnet: "172.29.0.0/16"

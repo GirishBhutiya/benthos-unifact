@@ -1,0 +1,49 @@
+input:
+  opcua:
+    endpoint: opc.tcp://172.18.14.211:49380
+    nodeIDs:
+      - '{"1": [{"node": "ns=2;s=TwinCat.DC1.D007.Robot_good_part", "dataType": "bool", "name": "Robot_good_part", "logging_sql":"true", "logging_influx": "true", "group": "D007", "db": "mssql", "historian": "influx", "sqlSp": "MES_DCM_Trim_OPC_SP"}]}'
+      - '{"2": [{"node": "ns=2;s=Buhler-OPC-D007.D007.APPL.en_entstd.svENdigitalOUT.scrap_spc", "dataType": "bool", "name": "scrap_spc", "logging_sql":"true", "logging_influx": "true", "group": "D007", "db": "mssql", "historian": "influx", "sqlSp": "MES_DCM_OPC_Benthos_scrap_spc"}]}'
+      - '{"3": [{"node": "ns=2;s=Buhler-OPC-D007.D007.APPL.en_entstd.svENdigitalOUT.scrap_startup", "dataType": "bool", "name": "scrap_startup", "logging_sql":"true", "logging_influx": "true", "group": "D007", "db": "mssql", "historian": "influx", "sqlSp": "MES_DCM_OPC_Benthos_scrap"}]}'
+    subscribeEnabled: true
+    insecure: true
+pipeline:
+  processors:
+    - bloblang: |
+        root = meta("Message").parse_json()
+        root.timestamp_ms = (timestamp_unix_nano() / 1000000).floor()
+        root.group = meta("group")
+        root.db = meta("db")
+        root.historian = meta("historian")
+        root.sqlSp = meta("sqlSp")
+        let one = "%s%s='%s'".format("@", "group", meta("group"))
+        let two = "%s%s=%s".format("@", "timestamp_ms", root.timestamp_ms.string())
+        let four = "%s%s='%s'".format("@", "Machine", meta("group"))
+        let gmeta = "%s, %s, %s".format($one,$two,$four)
+        meta spq = "exec " + meta("sqlSp")+ " " + jsontosp(meta("Message")) + $gmeta
+        root.query = "exec " + meta("sqlSp")+ " " + jsontosp(meta("Message")) + $gmeta
+
+output:
+  broker:
+    pattern: fan_out
+    outputs:
+      - mqtt:
+          urls:
+            - tcp://10.0.0.56:1883
+          topic: UMH/V1/IMP/DCM/${! meta("group") }/subscription/${! meta("opcua_path") }
+          user: "user1"
+          password: "9jrKxe6u548LIKpl"
+          client_id: "imp-subscription"
+      - sql_raw:
+          driver: "mssql" # No default (required)
+          dsn: "sqlserver://rcmmes:rcmmes384@10.0.0.18:1433?database=IMP_MES_DB"
+          query: ${!meta("spq")}
+          unsafe_dynamic_query: true
+      - influxdb:
+          endpoint: http://10.2.0.6:8086
+          username: admin
+          password: admin123
+          token: BSNnByRccLkjEULGg1aA78tO0uGgwk2uJLz6EUlw1qh5uIFG9jmkDV8dW6tPQQExiVIITNDlpywJ8HoWEgLbuQ==
+          org: RCM
+          bucket: UMH_V1_IMP_DCM_subscription
+          precision: ns

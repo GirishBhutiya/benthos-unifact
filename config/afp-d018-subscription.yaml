@@ -1,0 +1,47 @@
+input:
+  absubscription:
+    tcpDevice: '192.168.1.17' # IP address of the PLC
+    timeout: 10             # Timeout in seconds for connections and requests. Default to 10
+    subscriptions:
+      - '{"1": [{"address": "SHOT_START_TO_VISITRAK", "datatype":"bool","name": "SHOT_START_TO_VISITRAK", "group": "D018", "db": "mssql", "historian": "influx", "sqlSp": "MES_DCM_OPC_Benthos_AB"}]}'
+      - '{"2": [{"address": "BAD_SHOT_TO_EXT", "datatype":"bool", "name": "BAD_SHOT_TO_EXT", "group": "D018", "db": "mssql", "historian": "influx", "sqlSp": "MES_DCM_OPC_Benthos_AB"}]}'
+      - '{"3": [{"address": "PART_KEPT", "datatype":"bool","name": "PART_KEPT", "group": "D018", "db": "mssql", "historian": "influx", "sqlSp": "MES_DCM_OPC_Benthos_AB"}]}'
+      - '{"4": [{"address": "WARMUP_SHOTS_TO_VISITRAK", "datatype":"bool","name": "WARMUP_SHOTS_TO_VISITRAK", "group": "D018", "db": "mssql", "historian": "influx", "sqlSp": "MES_DCM_OPC_Benthos_AB"}]}'
+  
+pipeline:
+  processors:
+    - bloblang: |
+        root = meta("Message").parse_json()
+        root.value = meta("value")
+        root.timestamp_ms = (timestamp_unix_nano() / 1000000).floor()
+        root.group = meta("group")
+        root.db = meta("db")
+        root.historian = meta("historian")
+        root.sqlSp = meta("sqlSp")
+        
+        let one = "%s%s='%s'".format("@", "group", meta("group"))
+        let two = "%s%s=%s".format("@", "timestamp_ms", root.timestamp_ms.string())
+        let three = "%s%s=%s".format("@", "value", root.value)
+        let four = "%s%s='%s'".format("@", "Machine", meta("group"))
+        let gmeta = "%s, %s, %s, %s".format($one,$two,$three,$four)
+        meta spq = "exec " + meta("sqlSp")+ " " + jsontosp(meta("Message")) + $gmeta
+
+output:
+  broker:
+    pattern: fan_out
+    outputs:
+      - mqtt:
+          urls:
+            - tcp://10.0.0.56:1883
+          topic: UMH/V1/AFP/DCM/${! meta("group") }/subscription/${! meta("tag_name") }
+          user: "user1"
+          password: "9jrKxe6u548LIKpl"
+          client_id: "imp-trigger"
+      - influxdb:
+          endpoint: http://10.2.0.6:8086
+          username: admin
+          password: admin123
+          token: BSNnByRccLkjEULGg1aA78tO0uGgwk2uJLz6EUlw1qh5uIFG9jmkDV8dW6tPQQExiVIITNDlpywJ8HoWEgLbuQ==
+          org: RCM
+          bucket: UMH_V1_AFP_DCM_subscription
+          precision: ns

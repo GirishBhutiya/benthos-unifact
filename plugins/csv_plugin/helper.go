@@ -34,20 +34,24 @@ func getLastLineFromFile(ir io.Reader) (map[string]string, int, error) {
 	if err != nil {
 		log.Println(err)
 	}
-	headers := all[0]
-	lastLine := all[len(all)-1]
-	if len(headers) != len(lastLine) {
-		return nil, 0, errors.New("headers and records are not the same length")
-	}
-	recordMap := make(map[string]string)
-	for i, hdr := range headers {
-		recordMap[hdr] = lastLine[i]
-	}
-	if f, ok := ir.(*os.File); ok {
-		f.Close()
-	}
+	log.Println(len(all))
+	if len(all) > 0 {
+		headers := all[0]
+		lastLine := all[len(all)-1]
+		if len(headers) != len(lastLine) {
+			return nil, 0, errors.New("headers and records are not the same length")
+		}
+		recordMap := make(map[string]string)
+		for i, hdr := range headers {
+			recordMap[hdr] = lastLine[i]
+		}
+		if f, ok := ir.(*os.File); ok {
+			f.Close()
+		}
 
-	return recordMap, len(all), nil
+		return recordMap, len(all), nil
+	}
+	return nil, 0, errors.New("no records found")
 }
 func getLastLineFromFTPFile(fr *ftp.Response) (map[string]string, int, error) {
 
