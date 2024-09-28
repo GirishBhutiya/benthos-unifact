@@ -24,6 +24,14 @@ dist
 package
 target
 build
+
+# Cert Directory
+certs
+
+# IDEs
+.idea
+.vscode
+*.iml
 # Environment versions file
 .versions
 

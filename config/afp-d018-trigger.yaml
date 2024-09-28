@@ -3,9 +3,9 @@ input:
     tcpDevice: '192.168.1.17' # IP address of the PLC
     timeout: 10             # Timeout in seconds for connections and requests. Default to 10
     subscriptions:
-      - '{"1": [{"address": "SHOT_START_TO_VISITRAK", "datatype":"bool","group": "D018", "db": "mssql", "historian": "influx", "sqlSp": "MES_DCM_OPC_Benthos_AB"}]}'
+      - '{"1": [{"address": "IX01_LadlePourFinish", "datatype":"bool","group": "D018", "db": "mssql", "historian": "influx", "sqlSp": "MES_DCM_OPC_Benthos_AB"}]}'
     tsubscriptions:
-      - '{"1": [{"address":"BAD_SHOT_TO_EXT","datatype":"bool", "name": "BAD_SHOT_TO_EXT"}, {"address": "PART_KEPT", "datatype":"bool","name": "PART_KEPT"},{"address": "WARMUP_SHOTS_TO_VISITRAK", "datatype":"bool","name": "WARMUP_SHOTS_TO_VISITRAK"}]}'
+      - '{"1": [{"address":"BAD_SHOT_FROM_VT","datatype":"bool", "name": "BAD_SHOT_TO_EXT"}, {"address": "PART_KEPT_FROM_EXT", "datatype":"bool","name": "PART_KEPT"},{"address": "BAD_SHOT_FROM_VT", "datatype":"bool","name": "WARMUP_SHOTS_TO_VISITRAK"}]}'
   
 pipeline:
   processors:
